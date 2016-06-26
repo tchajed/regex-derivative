@@ -147,7 +147,7 @@ Section RegularExpressions.
   Hint Resolve app_comm_cons.
   Hint Resolve observation_map_eps observation_map_holds.
 
-  Theorem observation_map_denotes_derivative_1 : forall r c,
+  Theorem continuation_map_denotes_derivative_1 : forall r c,
       forall l, denotation (continuation_map c r) l ->
            derivative c (denotation r) l.
   Proof.
@@ -167,7 +167,7 @@ Section RegularExpressions.
       eauto.
   Qed.
 
-  Theorem observation_map_denotes_derivative_2 : forall r c,
+  Theorem continuation_map_denotes_derivative_2 : forall r c,
       forall l, derivative c (denotation r) l ->
            denotation (continuation_map c r) l.
   Proof.
@@ -198,12 +198,12 @@ Section RegularExpressions.
       exists s1, s2; intuition eauto.
   Qed.
 
-  Theorem observation_map_denotes_derivative : forall r c,
+  Theorem continuation_map_denotes_derivative : forall r c,
       forall l, denotation (continuation_map c r) l <->
            derivative c (denotation r) l.
   Proof.
-    split; auto using observation_map_denotes_derivative_1,
-           observation_map_denotes_derivative_2.
+    split; auto using continuation_map_denotes_derivative_1,
+           continuation_map_denotes_derivative_2.
   Qed.
 
 End RegularExpressions.
