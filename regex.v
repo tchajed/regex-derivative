@@ -113,6 +113,17 @@ Section RegularExpressions.
     intuition auto using observation_map_2.
   Qed.
 
+  Lemma observation_map_holds : forall r,
+      denotation r nil ->
+      denotation (observation_map r) nil.
+  Proof.
+    induction r; simpl; intros; repeat deex;
+      intuition eauto.
+    inversion H.
+    symmetry in H; apply app_eq_nil in H; intuition subst.
+    exists nil, nil; intuition eauto.
+  Qed.
+
   Hint Resolve app_comm_cons.
   Hint Resolve observation_map_eps.
 
@@ -121,7 +132,7 @@ Section RegularExpressions.
            derivative c (denotation r) l.
   Proof.
     unfold derivative.
-    induction r; simpl; intros; simpl in *;
+    induction r; simpl; intros;
       intuition auto;
       repeat deex; subst.
     - destruct (Sigma_dec c s); subst; simpl in *; intuition.
@@ -134,6 +145,39 @@ Section RegularExpressions.
       apply IHr in H0.
       rewrite app_comm_cons.
       eauto.
+  Qed.
+
+  Hint Resolve observation_map_holds.
+
+  Theorem observation_map_denotes_derivative_2 : forall r c,
+      forall l, derivative c (denotation r) l ->
+           denotation (continuation_map c r) l.
+  Proof.
+    unfold derivative.
+    induction r; simpl; intros;
+      intuition auto;
+      repeat deex; subst.
+    - destruct (Sigma_dec c s); subst; simpl in *; intuition.
+      inversion H; eauto.
+      inversion H; eauto.
+    - destruct l1; [ right | left ].
+      * simpl in *; subst.
+      exists nil, l; intuition eauto.
+      * rewrite <- app_comm_cons in H.
+        inversion H; subst.
+        apply IHr1 in H0.
+        exists l1, l2; intuition auto.
+    - remember (c::l).
+      generalize dependent l.
+      induction H; intros.
+      inversion Heql0.
+      destruct s1; simpl in *.
+
+      specialize (IHstar _ Heql0); repeat deex; subst.
+      exists l1, l2; intuition eauto.
+
+      inversion Heql0; subst.
+      exists s1, s2; intuition eauto.
   Qed.
 
 End RegularExpressions.
