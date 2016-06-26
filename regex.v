@@ -1,11 +1,16 @@
 Require Import List.
-Import ListNotations.
-
-Set Implicit Arguments.
 
 Section RegularExpressions.
+
+  (** The alphabet for strings *)
   Variable Sigma:Type.
-  Variable Sigma_dec : forall (c c': Sigma), {c=c'} + {c<>c'}.
+  (** We only require decidable equality on the alphabet for matching
+  and derivatives to work (in particular, no finiteness
+  constraint). *)
+  Variable Sigma_dec : forall (c c': Sigma), {c = c'} + {c <> c'}.
+
+  Definition string_dec : forall (s s': list Sigma), {s = s'} + {s <> s'} :=
+    List.list_eq_dec Sigma_dec.
 
   Inductive regex :=
   | Empty
@@ -16,6 +21,8 @@ Section RegularExpressions.
 
   Definition Eps := Star Empty.
 
+  (** First we give an auxiliary inductive definition for the
+  denotation of Kleene star of an arbitrary proposition. *)
   Inductive star (P: list Sigma -> Prop) : list Sigma -> Prop :=
   | star_empty : star P nil
   | star_iter : forall s1 s2,
@@ -23,13 +30,12 @@ Section RegularExpressions.
       star P s2 ->
       star P (s1 ++ s2).
 
-  Definition string_dec : forall (s s': list Sigma), {s = s'} + {s <> s'} :=
-    list_eq_dec Sigma_dec.
-
+  (** The denotation of a regex is a language, expressed as a
+  predicate over strings. *)
   Fixpoint denotation (r:regex) : list Sigma -> Prop :=
     match r with
     | Empty => fun _ => False
-    | Char s => fun l => l = [s]
+    | Char s => fun l => l = s::nil
     | Or r1 r2 => fun l => denotation r1 l \/ denotation r2 l
     | Seq r1 r2 => fun l =>
                     exists l1 l2, l = l1 ++ l2 /\
@@ -38,6 +44,8 @@ Section RegularExpressions.
     | Star r => fun l => star (denotation r) l
     end.
 
+  (* The [observation_map] of a regex is one (equivalent to) Eps if nil
+  is in the language and one (equivalent to) Empty otherwise. *)
   Fixpoint observation_map (r:regex) : regex :=
     match r with
     | Empty => Empty
@@ -47,6 +55,8 @@ Section RegularExpressions.
     | Star r => Eps
     end.
 
+  (** Finally, we define the syntactic continuation map or derivative
+    of a regular expression, with respect to c. *)
   Section Derivative.
     Variable c:Sigma.
 
@@ -62,9 +72,13 @@ Section RegularExpressions.
       end.
   End Derivative.
 
+  (** To write the correctness of the continuation_map, [derivative]
+  defines derivative for a language in a straightforward,
+  interpretable way. *)
   Definition derivative (c:Sigma) (P: list Sigma -> Prop) : list Sigma -> Prop :=
     fun l => P (c :: l).
 
+  (** A bit of automation to instantiate existential hypotheses *)
   Ltac deex :=
     match goal with
     | [ H: exists (varname: _), _ |- _ ] =>
@@ -78,51 +92,55 @@ Section RegularExpressions.
 
   Hint Constructors star.
 
-  (** characterization of observation_map: when the resulting regex
+  (** Characterization of observation_map: when the resulting regex
   holds, it is equivalent to Eps (an artifact of how observation_map
   is defined) and nil is in r *)
+  Section ObservationMap.
 
-  Lemma observation_map_1 : forall r l,
+    Lemma observation_map_1 : forall r l,
       denotation (observation_map r) l ->
       l = nil.
-  Proof.
-    induction r; simpl; intros;
-      repeat deex; subst;
-        intuition.
-    rewrite (IHr1 l1); eauto.
-    inversion H; intuition.
-  Qed.
+    Proof.
+      induction r; simpl; intros;
+        repeat deex; subst;
+          intuition.
+      rewrite (IHr1 l1); eauto.
+      inversion H; intuition.
+    Qed.
 
-  Lemma observation_map_2 : forall r,
-      denotation (observation_map r) nil ->
-      denotation r nil.
-  Proof.
-    induction r; simpl; intros;
-      repeat deex; subst;
-        intuition.
-    symmetry in H; apply app_eq_nil in H; intuition subst.
-    exists nil, nil; intuition.
-  Qed.
+    Lemma observation_map_2 : forall r,
+        denotation (observation_map r) nil ->
+        denotation r nil.
+    Proof.
+      induction r; simpl; intros;
+        repeat deex; subst;
+          intuition.
+      symmetry in H; apply app_eq_nil in H; intuition subst.
+      exists nil, nil; intuition.
+    Qed.
 
-  Lemma observation_map_eps : forall r l,
-      denotation (observation_map r) l ->
-      (l = nil /\ denotation r []).
-  Proof.
-    intros.
-    pose proof (observation_map_1 _ _ H); subst.
-    intuition auto using observation_map_2.
-  Qed.
+    Lemma observation_map_eps : forall r l,
+        denotation (observation_map r) l ->
+        (l = nil /\ denotation r nil).
+    Proof.
+      intros.
+      pose proof (observation_map_1 _ _ H); subst.
+      intuition auto using observation_map_2.
+    Qed.
 
-  Lemma observation_map_holds : forall r,
-      denotation r nil ->
-      denotation (observation_map r) nil.
-  Proof.
-    induction r; simpl; intros; repeat deex;
-      intuition eauto.
-    inversion H.
-    symmetry in H; apply app_eq_nil in H; intuition subst.
-    exists nil, nil; intuition eauto.
-  Qed.
+    (* converse to the above *)
+    Lemma observation_map_holds : forall r,
+        denotation r nil ->
+        denotation (observation_map r) nil.
+    Proof.
+      induction r; simpl; intros; repeat deex;
+        intuition eauto.
+      inversion H.
+      symmetry in H; apply app_eq_nil in H; intuition subst.
+      exists nil, nil; intuition eauto.
+    Qed.
+
+  End ObservationMap.
 
   Hint Resolve app_comm_cons.
   Hint Resolve observation_map_eps.
