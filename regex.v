@@ -1,3 +1,21 @@
+(** Regex derivatives
+ *
+ * Regular expression derivatives are a particularly elegant approach
+ * to matching and reasoning about regular expressions and
+ * languages. The idea is to consider the derivative of a language L
+ * (a set of strings) with respect to a character c, defined as {w |
+ * cw in L}. In terms of automata, what does the automata match if fed
+ * a c first? It happens that the derivative of a regular expression
+ * can be defined purely syntatically.
+ *
+ * This development defines regexes as syntax and as predicates,
+ * defines derivatives syntactically and as a transformation of a
+ * predicate, and proves a relationship between these
+ * two. Specifically, [[ dr/dc ]] = d [[ r ]]/dc, abusing d/dc for
+ * both the syntatic and denotational derivative and using [[ r ]] to
+ * denote the denotation of a regex.
+ *)
+
 Require Import List.
 
 (** A bit of automation to instantiate existential hypotheses *)
