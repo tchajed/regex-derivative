@@ -1,5 +1,17 @@
 Require Import List.
 
+(** A bit of automation to instantiate existential hypotheses *)
+Ltac deex :=
+  match goal with
+  | [ H: exists (varname: _), _ |- _ ] =>
+    let name := fresh varname in
+    destruct H as [name ?];
+    repeat match goal with
+           | [ H: _ /\ _ |- _ ] =>
+             destruct H
+           end
+  end.
+
 Section RegularExpressions.
 
   (** The alphabet for strings *)
@@ -55,41 +67,8 @@ Section RegularExpressions.
     | Star r => Eps
     end.
 
-  (** Finally, we define the syntactic continuation map or derivative
-    of a regular expression, with respect to c. *)
-  Section Derivative.
-    Variable c:Sigma.
-
-    Fixpoint continuation_map (r:regex) : regex :=
-      match r with
-      | Empty => Empty
-      | Char c' => if Sigma_dec c c' then Eps else Empty
-      | Or r1 r2 => Or (continuation_map r1) (continuation_map r2)
-      | Seq r1 r2 => Or
-                      (Seq (continuation_map r1) r2)
-                      (Seq (observation_map r1) (continuation_map r2))
-      | Star r => Seq (continuation_map r) (Star r)
-      end.
-  End Derivative.
-
-  (** To write the correctness of the continuation_map, [derivative]
-  defines derivative for a language in a straightforward,
-  interpretable way. *)
-  Definition derivative (c:Sigma) (P: list Sigma -> Prop) : list Sigma -> Prop :=
-    fun l => P (c :: l).
-
-  (** A bit of automation to instantiate existential hypotheses *)
-  Ltac deex :=
-    match goal with
-    | [ H: exists (varname: _), _ |- _ ] =>
-      let name := fresh varname in
-      destruct H as [name ?];
-      repeat match goal with
-             | [ H: _ /\ _ |- _ ] =>
-               destruct H
-             end
-    end.
-
+  (* We will want to automatically prove the denotation star with its
+  constructors *)
   Hint Constructors star.
 
   (** Characterization of observation_map: when the resulting regex
@@ -142,8 +121,31 @@ Section RegularExpressions.
 
   End ObservationMap.
 
+  (** Finally, we define the syntactic continuation map or derivative
+    of a regular expression, with respect to c. *)
+  Section Derivative.
+    Variable c:Sigma.
+
+    Fixpoint continuation_map (r:regex) : regex :=
+      match r with
+      | Empty => Empty
+      | Char c' => if Sigma_dec c c' then Eps else Empty
+      | Or r1 r2 => Or (continuation_map r1) (continuation_map r2)
+      | Seq r1 r2 => Or
+                      (Seq (continuation_map r1) r2)
+                      (Seq (observation_map r1) (continuation_map r2))
+      | Star r => Seq (continuation_map r) (Star r)
+      end.
+  End Derivative.
+
+  (** To write the correctness of the continuation_map, [derivative]
+  defines derivative for a language in a straightforward,
+  interpretable way. *)
+  Definition derivative (c:Sigma) (P: list Sigma -> Prop) : list Sigma -> Prop :=
+    fun l => P (c :: l).
+
   Hint Resolve app_comm_cons.
-  Hint Resolve observation_map_eps.
+  Hint Resolve observation_map_eps observation_map_holds.
 
   Theorem observation_map_denotes_derivative_1 : forall r c,
       forall l, denotation (continuation_map c r) l ->
@@ -164,8 +166,6 @@ Section RegularExpressions.
       rewrite app_comm_cons.
       eauto.
   Qed.
-
-  Hint Resolve observation_map_holds.
 
   Theorem observation_map_denotes_derivative_2 : forall r c,
       forall l, derivative c (denotation r) l ->
@@ -196,6 +196,14 @@ Section RegularExpressions.
 
       inversion Heql0; subst.
       exists s1, s2; intuition eauto.
+  Qed.
+
+  Theorem observation_map_denotes_derivative : forall r c,
+      forall l, denotation (continuation_map c r) l <->
+           derivative c (denotation r) l.
+  Proof.
+    split; auto using observation_map_denotes_derivative_1,
+           observation_map_denotes_derivative_2.
   Qed.
 
 End RegularExpressions.
