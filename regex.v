@@ -89,6 +89,27 @@ Section RegularExpressions.
   constructors *)
   Hint Constructors star.
 
+  Lemma star_false : forall l,
+      star (fun _ => False) l ->
+      l = nil.
+  Proof.
+    inversion 1; intuition.
+  Qed.
+
+  Ltac crush :=
+    repeat match goal with
+           | _ => progress (intros; simpl in *; subst)
+           | _ => deex
+           | [ H: nil = _ ++ _ |- _ ] =>
+             destruct (app_eq_nil _ _ (eq_sym H))
+           | [ H: star (fun _ => False) _ |- _ ] =>
+             apply star_false in H
+           | [ H: _ :: _ = _ :: _ |- _ ] =>
+             inversion H; clear H
+           | _ => progress (intuition eauto)
+           | _ => congruence
+           end.
+
   (** Characterization of observation_map: when the resulting regex
   holds, it is equivalent to Eps (an artifact of how observation_map
   is defined) and nil is in r *)
@@ -98,21 +119,15 @@ Section RegularExpressions.
       denotation (observation_map r) l ->
       l = nil.
     Proof.
-      induction r; simpl; intros;
-        repeat deex; subst;
-          intuition.
+      induction r; crush.
       rewrite (IHr1 l1); eauto.
-      inversion H; intuition.
     Qed.
 
     Lemma observation_map_2 : forall r,
         denotation (observation_map r) nil ->
         denotation r nil.
     Proof.
-      induction r; simpl; intros;
-        repeat deex; subst;
-          intuition.
-      symmetry in H; apply app_eq_nil in H; intuition subst.
+      induction r; crush.
       exists nil, nil; intuition.
     Qed.
 
@@ -130,10 +145,7 @@ Section RegularExpressions.
         denotation r nil ->
         denotation (observation_map r) nil.
     Proof.
-      induction r; simpl; intros; repeat deex;
-        intuition eauto.
-      inversion H.
-      symmetry in H; apply app_eq_nil in H; intuition subst.
+      induction r; crush.
       exists nil, nil; intuition eauto.
     Qed.
 
@@ -170,18 +182,13 @@ Section RegularExpressions.
            derivative c (denotation r) l.
   Proof.
     unfold derivative.
-    induction r; simpl; intros;
-      intuition auto;
-      repeat deex; subst.
-    - destruct (Sigma_dec c s); subst; simpl in *; intuition.
-      inversion H; subst; intuition eauto.
-    - eauto 10.
-    - pose proof (observation_map_eps _ _ H0); intuition subst.
+    induction r; crush.
+    - destruct (Sigma_dec c s); crush.
+    - do 2 eexists; crush.
+    - pose proof (observation_map_eps _ _ H0); crush.
       exists nil.
-      eexists; intuition eauto.
-    - repeat deex; subst.
-      apply IHr in H0.
-      rewrite app_comm_cons.
+      eexists; crush.
+    - rewrite app_comm_cons.
       eauto.
   Qed.
 
@@ -190,30 +197,18 @@ Section RegularExpressions.
            denotation (continuation_map c r) l.
   Proof.
     unfold derivative.
-    induction r; simpl; intros;
-      intuition auto;
-      repeat deex; subst.
-    - destruct (Sigma_dec c s); subst; simpl in *; intuition.
-      inversion H; eauto.
-      inversion H; eauto.
-    - destruct l1; [ right | left ].
-      * simpl in *; subst.
-      exists nil, l; intuition eauto.
-      * rewrite <- app_comm_cons in H.
-        inversion H; subst.
-        apply IHr1 in H0.
-        exists l1, l2; intuition auto.
+    induction r; crush.
+    - destruct (Sigma_dec s s); crush.
+    - destruct l1; [ right | left ]; crush.
+      * exists nil, l; crush.
+      * exists l1, l2; crush.
     - remember (c::l).
       generalize dependent l.
-      induction H; intros.
-      inversion Heql0.
-      destruct s1; simpl in *.
-
-      specialize (IHstar _ Heql0); repeat deex; subst.
-      exists l1, l2; intuition eauto.
-
-      inversion Heql0; subst.
-      exists s1, s2; intuition eauto.
+      match goal with
+      | [ H: star _ _ |- _ ] => induction H; crush
+      end.
+      destruct s1; crush.
+      exists s1, s2; crush.
   Qed.
 
   Theorem continuation_map_denotes_derivative : forall r c,
