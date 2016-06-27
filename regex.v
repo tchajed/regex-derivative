@@ -219,4 +219,25 @@ Section RegularExpressions.
            continuation_map_denotes_derivative_2.
   Qed.
 
+  Section Matching.
+
+    (** auxilliary function to make observation_map computable *)
+    Definition includes_nil r : {denotation (observation_map r) nil} + {forall l, ~denotation (observation_map r) l}.
+      induction r; crush; try solve [ left + right; crush ].
+      left; exists nil, nil; crush.
+    Defined.
+
+    Hint Resolve observation_map_2.
+
+    (** Regex matching, with correctness built into the return type *)
+    Fixpoint regex_match r s : {denotation r s} + {~denotation r s}.
+      destruct s.
+      - destruct (includes_nil r); solve [ left + right; crush ].
+      - destruct (regex_match (continuation_map s r) s0).
+        left; apply continuation_map_denotes_derivative_1 in d; eauto.
+        right; eauto using continuation_map_denotes_derivative_2.
+    Defined.
+
+  End Matching.
+
 End RegularExpressions.
