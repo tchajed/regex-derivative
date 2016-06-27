@@ -43,12 +43,14 @@ Section RegularExpressions.
     List.list_eq_dec Sigma_dec.
 
   Inductive regex :=
+    (** Empty is the empty language, matching no strings. *)
   | Empty
   | Char (s:Sigma)
   | Or (r1:regex) (r2:regex)
   | Seq (r1:regex) (r2:regex)
   | Star (r:regex).
 
+  (** Eps is a derived regex that matches only the empty string. *)
   Definition Eps := Star Empty.
 
   (** First we give an auxiliary inductive definition for the
@@ -72,17 +74,6 @@ Section RegularExpressions.
                              denotation r1 l1 /\
                              denotation r2 l2
     | Star r => fun l => star (denotation r) l
-    end.
-
-  (* The [observation_map] of a regex is one (equivalent to) Eps if nil
-  is in the language and one (equivalent to) Empty otherwise. *)
-  Fixpoint observation_map (r:regex) : regex :=
-    match r with
-    | Empty => Empty
-    | Char _ => Empty
-    | Or r1 r2 => Or (observation_map r1) (observation_map r2)
-    | Seq r1 r2 => Seq (observation_map r1) (observation_map r2)
-    | Star r => Eps
     end.
 
   (* We will want to automatically prove the denotation star with its
@@ -109,6 +100,23 @@ Section RegularExpressions.
            | _ => progress (intuition eauto)
            | _ => congruence
            end.
+
+  (* Eps indeed represents the language consisting only of the empty string. *)
+  Remark eps_denotation : forall l, denotation Eps l <-> l = nil.
+  Proof.
+    crush.
+  Qed.
+
+  (* The [observation_map] of a regex is one (equivalent to) Eps if nil
+  is in the language and one (equivalent to) Empty otherwise. *)
+  Fixpoint observation_map (r:regex) : regex :=
+    match r with
+    | Empty => Empty
+    | Char _ => Empty
+    | Or r1 r2 => Or (observation_map r1) (observation_map r2)
+    | Seq r1 r2 => Seq (observation_map r1) (observation_map r2)
+    | Star r => Eps
+    end.
 
   (** Characterization of observation_map: when the resulting regex
   holds, it is equivalent to Eps (an artifact of how observation_map
