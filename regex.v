@@ -18,18 +18,6 @@
 
 Require Import List.
 
-(** A bit of automation to instantiate existential hypotheses *)
-Ltac deex :=
-  match goal with
-  | [ H: exists (varname: _), _ |- _ ] =>
-    let name := fresh varname in
-    destruct H as [name ?];
-    repeat match goal with
-           | [ H: _ /\ _ |- _ ] =>
-             destruct H
-           end
-  end.
-
 Section RegularExpressions.
 
   (** The alphabet for strings *)
@@ -87,10 +75,20 @@ Section RegularExpressions.
     inversion 1; intuition.
   Qed.
 
+  (** Some automation that covers most proofs here. *)
+
+  (* Helper for instantiating existential hypotheses, preserving names. *)
+  Ltac deex H :=
+    lazymatch type of H with
+    | exists (varname: _), _ =>
+      let name := fresh varname in
+      destruct H as [name ?]
+    end.
+
   Ltac crush :=
     repeat match goal with
            | _ => progress (intros; simpl in *; subst)
-           | _ => deex
+           | [ H: exists _, _ |- _ ] => deex H
            | [ H: nil = _ ++ _ |- _ ] =>
              destruct (app_eq_nil _ _ (eq_sym H))
            | [ H: star (fun _ => False) _ |- _ ] =>
@@ -192,7 +190,7 @@ Section RegularExpressions.
     unfold derivative.
     induction r; crush.
     - destruct (Sigma_dec c s); crush.
-    - pose proof (observation_map_eps _ _ H0); crush.
+    - pose proof (observation_map_eps _ _ H); crush.
     - rewrite app_comm_cons.
       eauto.
   Qed.
@@ -204,7 +202,7 @@ Section RegularExpressions.
     unfold derivative.
     induction r; crush.
     - destruct (Sigma_dec s s); crush.
-    - destruct l1; [ right | left ]; crush.
+    - destruct l1; solve [ left + right; crush ].
     - remember (c::l).
       generalize dependent l.
       match goal with
@@ -223,7 +221,7 @@ Section RegularExpressions.
 
   Section Matching.
 
-    Ltac t := try solve [left + right; crush ].
+    Ltac t := try solve [ left + right; crush ].
 
     (** auxilliary function to make observation_map computable *)
     Definition includes_nil r : {denotation (observation_map r) nil} + {forall l, ~denotation (observation_map r) l}.
