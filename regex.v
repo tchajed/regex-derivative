@@ -98,6 +98,8 @@ Section RegularExpressions.
            | [ H: _ :: _ = _ :: _ |- _ ] =>
              inversion H; clear H
            | _ => progress (intuition eauto 10)
+           | [ |- exists (_ : list _), _ ] =>
+             solve [ exists nil; crush ]
            | _ => congruence
            end.
 
@@ -136,7 +138,6 @@ Section RegularExpressions.
         denotation r nil.
     Proof.
       induction r; crush.
-      exists nil, nil; intuition.
     Qed.
 
     Lemma observation_map_eps : forall r l,
@@ -154,7 +155,6 @@ Section RegularExpressions.
         denotation (observation_map r) nil.
     Proof.
       induction r; crush.
-      exists nil, nil; intuition eauto.
     Qed.
 
   End ObservationMap.
@@ -193,8 +193,6 @@ Section RegularExpressions.
     induction r; crush.
     - destruct (Sigma_dec c s); crush.
     - pose proof (observation_map_eps _ _ H0); crush.
-      exists nil.
-      eexists; crush.
     - rewrite app_comm_cons.
       eauto.
   Qed.
@@ -207,7 +205,6 @@ Section RegularExpressions.
     induction r; crush.
     - destruct (Sigma_dec s s); crush.
     - destruct l1; [ right | left ]; crush.
-      exists nil, l; crush.
     - remember (c::l).
       generalize dependent l.
       match goal with
@@ -231,7 +228,6 @@ Section RegularExpressions.
     (** auxilliary function to make observation_map computable *)
     Definition includes_nil r : {denotation (observation_map r) nil} + {forall l, ~denotation (observation_map r) l}.
       induction r; crush; t.
-      left; exists nil, nil; crush.
     Defined.
 
     (** unfold definition of derivative to drive hints *)
