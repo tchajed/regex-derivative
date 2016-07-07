@@ -97,7 +97,7 @@ Section RegularExpressions.
              apply star_false in H
            | [ H: _ :: _ = _ :: _ |- _ ] =>
              inversion H; clear H
-           | _ => progress (intuition eauto)
+           | _ => progress (intuition eauto 10)
            | _ => congruence
            end.
 
@@ -192,7 +192,6 @@ Section RegularExpressions.
     unfold derivative.
     induction r; crush.
     - destruct (Sigma_dec c s); crush.
-    - do 2 eexists; crush.
     - pose proof (observation_map_eps _ _ H0); crush.
       exists nil.
       eexists; crush.
@@ -208,15 +207,13 @@ Section RegularExpressions.
     induction r; crush.
     - destruct (Sigma_dec s s); crush.
     - destruct l1; [ right | left ]; crush.
-      * exists nil, l; crush.
-      * exists l1, l2; crush.
+      exists nil, l; crush.
     - remember (c::l).
       generalize dependent l.
       match goal with
       | [ H: star _ _ |- _ ] => induction H; crush
       end.
       destruct s1; crush.
-      exists s1, s2; crush.
   Qed.
 
   Theorem continuation_map_denotes_derivative : forall r c,
