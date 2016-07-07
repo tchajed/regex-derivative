@@ -226,22 +226,54 @@ Section RegularExpressions.
 
   Section Matching.
 
+    Ltac t := try solve [left + right; crush ].
+
     (** auxilliary function to make observation_map computable *)
     Definition includes_nil r : {denotation (observation_map r) nil} + {forall l, ~denotation (observation_map r) l}.
-      induction r; crush; try solve [ left + right; crush ].
+      induction r; crush; t.
       left; exists nil, nil; crush.
     Defined.
 
+    (** unfold definition of derivative to drive hints *)
+    Definition derivative_unfold : forall r c s,
+        derivative c (denotation r) s ->
+        denotation r (c::s)
+      := ltac:(auto).
+
+    Hint Resolve derivative_unfold.
     Hint Resolve observation_map_2.
+    Hint Resolve continuation_map_denotes_derivative_1.
+    Hint Resolve continuation_map_denotes_derivative_2.
 
     (** Regex matching, with correctness built into the return type *)
     Fixpoint regex_match r s : {denotation r s} + {~denotation r s}.
       destruct s.
-      - destruct (includes_nil r); solve [ left + right; crush ].
-      - destruct (regex_match (continuation_map s r) s0).
-        left; apply continuation_map_denotes_derivative_1 in d; eauto.
-        right; eauto using continuation_map_denotes_derivative_2.
+      - destruct (includes_nil r); t.
+      - destruct (regex_match (continuation_map s r) s0); t.
     Defined.
+
+    Section LazyEvaluation.
+
+      (** Check if a regex represents the empty language. *)
+      Fixpoint is_empty r : {forall s, ~denotation r s} + {exists s, denotation r s}.
+        destruct r; simpl; t.
+        - destruct (is_empty r1); t.
+          destruct (is_empty r2); t.
+        - destruct (is_empty r1); t.
+          destruct (is_empty r2); t.
+      Defined.
+
+      (** This (probably more efficient) matcher first checks if the regex
+      language has become empty; if so, it stops matching and uses the is_empty
+      proof underneath a right constructor *)
+      Fixpoint lazy_regex_match r s : {denotation r s} + {~denotation r s}.
+        destruct s.
+        - destruct (includes_nil r); t.
+        - destruct (is_empty (continuation_map s r)); t.
+          destruct (regex_match (continuation_map s r) s0); t.
+      Defined.
+
+    End LazyEvaluation.
 
   End Matching.
 
