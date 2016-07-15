@@ -227,7 +227,9 @@ Section RegularExpressions.
   Hint Resolve app_comm_cons.
   Hint Resolve observation_map_eps observation_map_holds.
 
-  (** The correctness theorem is that two languages are the same.
+  (** The correctness theorem has the form that two languages (the denotation
+      of the continuation map and the derivative of the regex language) are the
+      same.
 
       In Coq the natural way to express that l1 and l2 are the same is to prove
       forall s, l1 <-> l2. This is easiest done by proving each direction
