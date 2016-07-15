@@ -227,6 +227,13 @@ Section RegularExpressions.
   Hint Resolve app_comm_cons.
   Hint Resolve observation_map_eps observation_map_holds.
 
+  (** The correctness theorem is that two languages are the same.
+
+      In Coq the natural way to express that l1 and l2 are the same is to prove
+      forall s, l1 <-> l2. This is easiest done by proving each direction
+      separately, amounting to proving l1 is a subset of l2 (forall s, l1 -> l2)
+      and that l2 is a subset of l1 (forall s, l2 -> l1). *)
+
   Theorem continuation_map_denotes_derivative_1 : forall r c,
       forall s, denotation (continuation_map c r) s ->
            derivative c (denotation r) s.
@@ -263,6 +270,9 @@ Section RegularExpressions.
     split; auto using continuation_map_denotes_derivative_1,
            continuation_map_denotes_derivative_2.
   Qed.
+
+  (** With these definitions it is easy to write a regex matcher, verified
+  against the denotation given above *)
 
   Section Matching.
 
