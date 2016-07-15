@@ -1,0 +1,5 @@
+*.aux
+*.glob
+*.vo
+regex.ml
+regex.mli
