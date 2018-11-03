@@ -1,6 +1,7 @@
 (**
  * Extract an executable OCaml implementation from the Coq regex matcher.
 *)
+Require Import Extraction.
 Require Import regex.
 Require Import Ascii.
 
@@ -9,7 +10,7 @@ here we extract methods specialized to lists of characters. *)
 
 Definition matcher := lazy_regex_match ascii Ascii.ascii_dec.
 
-Extraction Language Ocaml.
+Extraction Language OCaml.
 
 (** These directives cause the ascii datatype in Coq (which is just 8 booleans)
 to be extracted to a native char. Taken from Software Foundations Imp
