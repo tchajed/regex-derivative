@@ -9,14 +9,14 @@ env:
   global:
   - NJOBS="2"
   jobs:
-  - COQ_IMAGE="coqorg/coq:dev"
-  - COQ_IMAGE="coqorg/coq:8.11"
-  - COQ_IMAGE="coqorg/coq:8.10"
-  - COQ_IMAGE="coqorg/coq:8.9"
+  - COQ_VERSION="dev"
+  - COQ_VERSION="8.11"
+  - COQ_VERSION="8.10"
+  - COQ_VERSION="8.9"
 
 install: |
   # Prepare the COQ container
-  docker run -d -i --init --name=COQ -v ${TRAVIS_BUILD_DIR}:/home/coq/demo -w /home/coq/demo ${COQ_IMAGE}
+  docker run -d -i --init --name=COQ -v ${TRAVIS_BUILD_DIR}:/home/coq/demo -w /home/coq/demo "coqorg/coq:${COQ_VERSION}"
   docker exec COQ /bin/bash --login -c "
     # This bash script is double-quoted to interpolate Travis CI env vars:
     echo \"Build triggered by ${TRAVIS_EVENT_TYPE}\"
