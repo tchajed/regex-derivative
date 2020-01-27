@@ -108,7 +108,7 @@ Section RegularExpressions.
 
   (* We will want to automatically prove the denotation star with its
   constructors *)
-  Hint Constructors star.
+  Hint Constructors star : core.
 
   Lemma star_false : forall s,
       star (fun _ => False) s ->
@@ -224,8 +224,8 @@ Section RegularExpressions.
   Definition derivative (c:Sigma) (l: language) : language :=
     fun s => l (c :: s).
 
-  Hint Resolve app_comm_cons.
-  Hint Resolve observation_map_eps observation_map_holds.
+  Hint Resolve app_comm_cons : core.
+  Hint Resolve observation_map_eps observation_map_holds : core.
 
   (** The correctness theorem has the form that two languages (the denotation
       of the continuation map and the derivative of the regex language) are the
@@ -293,10 +293,10 @@ Section RegularExpressions.
         denotation r (c::s)
       := ltac:(auto).
 
-    Hint Resolve derivative_unfold.
-    Hint Resolve observation_map_2.
-    Hint Resolve continuation_map_denotes_derivative_1.
-    Hint Resolve continuation_map_denotes_derivative_2.
+    Hint Resolve derivative_unfold : core.
+    Hint Resolve observation_map_2 : core.
+    Hint Resolve continuation_map_denotes_derivative_1 : core.
+    Hint Resolve continuation_map_denotes_derivative_2 : core.
 
     (** Regex matching, with correctness built into the return type *)
     Fixpoint regex_match r s : {denotation r s} + {~denotation r s}.
