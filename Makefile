@@ -4,7 +4,9 @@ regex.vo: regex.v
 regex.ml: regex.vo Extract.v
 	coqc -q Extract.v
 
-.PHONY: clean
+all: regex.vo regex.ml
+
+.PHONY: clean all
 
 clean:
 	rm -f *.vo *.glob regex.ml regex.mli
